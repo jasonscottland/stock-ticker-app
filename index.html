@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Stock Ticker</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <h1>Stock Ticker</h1>
+
+  <section id="search">
+    <label for="symbolInput">Company name or ticker symbol:</label>
+    <input type="text" id="symbolInput" placeholder="e.g. Apple or AAPL">
+    <button id="searchBtn">Search</button>
+  </section>
+
+  <p id="statusMessage"></p>
+
+  <section id="results" class="hidden">
+    <h2 id="stockTitle"></h2>
+    <p id="priceDisplay"></p>
+    <canvas id="priceChart" width="600" height="300"></canvas>
+  </section>
+
+  <!--
+    config.js defines ALPHA_VANTAGE_API_KEY and must load before script.js.
+    It is listed in .gitignore, so each person running this app needs
+    their own copy with their own key filled in.
+  -->
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

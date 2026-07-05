@@ -1,0 +1,2 @@
+# Contains your private Alpha Vantage API key - never commit this
+config.js
