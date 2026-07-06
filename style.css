@@ -47,3 +47,32 @@ canvas {
 .hidden {
   display: none;
 }
+
+#historyList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+}
+
+#historyList li {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eee;
+}
+
+#historyList li:last-child {
+  border-bottom: none;
+}
+
+#historyList li:hover {
+  background: #f0f0f0;
+}
+
+#historyList .historyDate {
+  color: #666;
+  font-size: 14px;
+  margin-left: 8px;
+}

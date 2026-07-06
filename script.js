@@ -16,6 +16,12 @@ const ALPHA_VANTAGE_BASE_URL = "https://www.alphavantage.co/query";
 const MIN_REQUEST_GAP_MS = 1200;
 const CACHE_KEY_PREFIX = "stockTicker_cache_";
 
+// Search history is stored under its own localStorage key (separate from
+// the per-symbol API caches above), as a list of { symbol, timestamp }
+// entries, newest first. Capped so it doesn't grow forever.
+const HISTORY_KEY = "stockTicker_history";
+const MAX_HISTORY_ENTRIES = 25;
+
 // How long cached data is considered "fresh" before we call the API
 // again. Daily history only changes once a day after the market closes,
 // and a company-name-to-symbol match basically never changes, so those
@@ -36,6 +42,7 @@ const resultsSection = document.getElementById("results");
 const stockTitle = document.getElementById("stockTitle");
 const priceDisplay = document.getElementById("priceDisplay");
 const priceChart = document.getElementById("priceChart");
+const historyList = document.getElementById("historyList");
 
 searchBtn.addEventListener("click", handleSearch);
 
@@ -45,6 +52,8 @@ symbolInput.addEventListener("keydown", (event) => {
     handleSearch();
   }
 });
+
+renderHistory();
 
 async function handleSearch() {
   const query = symbolInput.value.trim();
@@ -74,6 +83,7 @@ async function handleSearch() {
     if (historyResult.cacheNote) cacheNotes.push(historyResult.cacheNote);
 
     displayResults(symbol, quoteResult.quote, historyResult.history);
+    addHistoryEntry(symbol);
     showStatus(cacheNotes.length > 0 ? "Note: " + cacheNotes.join("; ") : "");
   } catch (error) {
     showStatus(error.message);
@@ -115,6 +125,55 @@ function writeCache(params, data) {
 function isFresh(cacheEntry, functionName) {
   const maxAge = FRESHNESS_MS[functionName] || 0;
   return Date.now() - cacheEntry.timestamp < maxAge;
+}
+
+function loadHistory() {
+  const raw = localStorage.getItem(HISTORY_KEY);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function saveHistory(history) {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+// Records a successful search and refreshes the on-page history list.
+// If the symbol is already in the history (e.g. re-run from a history
+// click, or just searched again by typing), its old entry is dropped so
+// this becomes a timestamp update + move-to-top rather than a duplicate.
+function addHistoryEntry(symbol) {
+  const history = loadHistory().filter((entry) => entry.symbol !== symbol);
+  history.unshift({ symbol: symbol, timestamp: Date.now() });
+  history.length = Math.min(history.length, MAX_HISTORY_ENTRIES);
+  saveHistory(history);
+  renderHistory();
+}
+
+// Rebuilds the scrollable history list from localStorage. Clicking an
+// entry re-runs the search for that symbol, which goes through the same
+// caching/rate-limit logic as any other search (see fetchAlphaVantageJson).
+function renderHistory() {
+  const history = loadHistory();
+  historyList.innerHTML = "";
+
+  history.forEach((entry) => {
+    const item = document.createElement("li");
+
+    const symbolSpan = document.createElement("span");
+    symbolSpan.textContent = entry.symbol;
+    item.appendChild(symbolSpan);
+
+    const dateSpan = document.createElement("span");
+    dateSpan.className = "historyDate";
+    dateSpan.textContent = new Date(entry.timestamp).toLocaleString();
+    item.appendChild(dateSpan);
+
+    item.addEventListener("click", () => {
+      symbolInput.value = entry.symbol;
+      handleSearch();
+    });
+
+    historyList.appendChild(item);
+  });
 }
 
 function minutesAgo(timestamp) {
